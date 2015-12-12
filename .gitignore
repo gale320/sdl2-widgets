@@ -1,0 +1,5 @@
+*.a
+*.o
+*.obj
+*.so
+config.h
