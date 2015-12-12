@@ -1,0 +1,903 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>SDL2-widgets, a GUI toolkit using SDL</title>
+<style type="text/css">
+body {
+  background-color:#F0F0F0;
+  font-family:Verdana,"Luxi Sans";
+  font-size:11pt;
+}
+h1 { font-family:FreeSerif; color:#B00000; font-size:30pt; }
+h2 { font-family:FreeSerif; color:#B00000; font-size:20pt;}
+h3 { font-family:FreeSerif; color:#B00000; font-size:14pt; }
+h4 { font-family:FreeSerif; color:#B00000; font-size:12pt; }
+tt {
+  font-family:"FreeMono";
+  font-size:11pt;
+  /* font-weight: bold; */
+}
+pre {
+  font-family:"Courier New",Monospace;
+  font-size:11pt;
+  font-weight: normal;
+}
+table {
+  border-collapse: collapse;
+  width:95%;
+  font-weight:inherit;
+  font-size:inherit;
+  padding:10px;
+}
+td {
+  background-color:#F7F7E0;
+  border:solid thin grey;
+  font-weight:inherit;
+  vertical-align:top;
+  padding:10px;
+}
+table td.bold {
+  font-family:"Courier New",Monospace;
+  font-weight:bold;
+  font-size:11pt;
+  background-color:#E0E0E0;
+}
+dt {
+  font-family:"Courier New",Monospace;
+  font-weight:bold;
+  font-size:11pt;
+  font-weight:bold;
+}
+hr { width:50%; }
+</style>
+</head>
+<body>
+<center>
+<h1>SDL2-widgets</h1>
+<b>A GUI toolkit using the SDL2 libraries</b><br>
+(version 2.1)<br>
+Author:<br>
+<img src="mail-adr.gif"><br>
+Last updated: dec 2011
+</center>
+<p>
+<h2>Introduction</h2>
+SDL2-widgets is a GUI toolkit using the the SDL2 libraries. It is aiming at normal applications, which implies:
+a possibly complicated SDL_Surface hierarchy, where surfaces can be hidden or visible, with sliders, menus,
+text areas, etc. There are provisions for threads that can communicate with the main thread via messages
+containing lambda functions, you don't have to apply locks.
+<p>
+This version is rather complete, with good support for complicated applications.
+There are 2 small applications
+which should be useful for sound designers, called make-waves and bouncy-tune,
+which might serve as examples of real applications. Also there are the mandatory 'Hello World'
+and a demo program, illustrating most features of the toolkit.
+<p>
+In the following it's supposed that you know how SDL works. Building a surface hierarchy, where surfaces
+can be both hidden and updated at runtime, is not very straightforward. This is because surfaces
+are blitted (copied) to each other, so if one surface is modified, then its copied version will be out of date.
+Care has been taken that copied versions also are updated automatically.
+The toolkit is written in C++ where all class variables and methods are accessable 
+by the user, there are no private members.
+<p>
+An important feature of this toolkit is that applications are fully type-checked at compile time, 
+because type-casts are not needed.
+The <a href="#cookbook"><b>Cookbook</b></a> chapter might be useful to get you started.
+<h2>The widget classes</h2>
+<table>
+<tr>
+<td class="bold">WinBase
+<td>This is the base class for most other widgets. The most interesting variables and methods are
+as follows.
+<dl>
+<dt>WinBase(WinBase *pw,const char *title,int x,int y,int dx,int dy,Uint32 bgcol)<dd>
+  The constructor. Parameters:<br>
+  <tt>pw</tt>: the parent of a widget, used to create the internal widget hierarchy.<br>
+  <tt>title</tt>: to be drawn above the widget.<br>
+  <tt>x, y, dx, dy</tt>: the area occupied by the widget. For some subclasses <tt>dx</tt> and/or
+    <tt>dy</tt> may be 0, in this case the subclass will supply a default value.<br>
+  <tt>bgcol</tt>: the background color of the widget.<br>
+  </dd>
+<dt>~WinBase()<dd>
+  The destructor. The widget will be removed from the list of childrens of its parent.
+  If the widget has children these are also deleted. If the widget is a temporary widget
+  above other widgets, then it also will disappear correctly.</dd>
+<dt>Render *render<br>
+    SDL_Surface *title<dd>
+  The SDL surfaces for the widget and for its title.
+<dt>WinBase *parent<br>WinBase **children<dd>
+  To build the surface hierarchy. <tt>children</tt> is an array of pointers to child widgets.
+<dt>Point topleft,<br>
+    Rect tw_area,<br>
+    Rect title_area<dd>
+  <tt>topleft</tt> and <tt>title_area</tt> are relative to the parent surface,
+  <tt>tw_area</tt> is relative to the top surface. The values of <tt>tw_area.w</tt> and <tt>win->w</tt> are equal,
+  and also <tt>tw_area.h</tt> and <tt>win->h</tt>.</dd>
+<dt>Uint32 bgcol<dd>
+  Background color, can be used to clear the surface.</dd>
+<dt>bool hidden<dd>
+  If this has value <tt>true</tt>, then the surface still can be modified, it will not be visible however.
+  Child widgets will not be visible either.</dd>
+<dt>void clear(Rect *rect=0)<dd>
+  Fills surface <tt>win</tt> with color <tt>bgcol</tt>. SDL_Update is <i>not</i> called.</dd>
+<dt>void clear(Rect *rect,Uint32 col,bool upd)<dd>
+  Idem, using color <tt>col</tt>. If <tt>upd</tt> is true, then SDL_Update is called.</dd>
+<dt>void draw_raised(Rect *rect,Uint32 col,bool up)<dd>
+  Clear, then draw white and grey lines at the borders of <tt>rect</tt>, suggesting a raised (if <tt>up</tt> is true) or
+  sunken (if <tt>up</tt> is false) area.</dd>
+<dt>void border(WinBase *child,int wid=1)<dd>
+  Draw a 3D border around a child widget. The width <tt>wid</tt> can be 1, 2 or 3.
+  The title of the child widget is shifted upwards, so it does not overlap the drawn border.</dd>
+<dt>void hide()<dd>
+  Sets the <tt>hidden</tt> variable to <tt>true</tt>. The widget's area in the top surface will be replaced
+  with the background color. When get_events() is not started yet (<tt>sdl_running</tt> = false)
+  then calling this method is not needed, setting variable <tt>hidden</tt> to true will suffice.</dd>
+<dt>void show()<dd>
+  Sets the <tt>hidden</tt> variable to <tt>false</tt>, then blits the widget and its title to the top surface and updates it.
+  <i>Not</i> recursive.</dd>
+<dt>void keep_on_top()<dd>
+  Keeps this widget on top of other widgets. Useable for widgets that can cover other widgets. 
+  If not needed anymore it can be deleted, or you can use <tt>hide()</tt> and later <tt>show()</tt>.<br>
+  This method does 2 things: it sets up the necessary data structures, then it connects the widget
+  to the top window. Therefore the widget should have been instantiated with parameter <tt>pw</tt> 
+  (the parent widget) set to 0.<br>
+  A widget of class BgrWin can be made movable with the mouse. In this case the mouse-parameter callbacks
+  should be <tt>mwin::down</tt>, <tt>mwin::move</tt>, <tt>mwin::up</tt>.</dd>
+<dt>void draw_blit_recur()<dd>
+  The widget is drawn, then its children are drawn and blitted recursivily to its surface, then the surface
+  is blitted to its parent. Also the titles of the children are blitted.<br>
+  This method is called once from the top level, as the first statement of <tt>get_events()</tt>.
+  It can be used later also, e.g. after several children of a widget have been modified.</dd>
+<dt>void upd(Rect *rect)<dd>
+  Calls SDL_UpdateRects(topwindow->win,1,rect), however if the alert window or other keep_on_top'd widgets 
+  are covering the rect, then these will stay neatly on top.<br>
+  This method can be called by the top window, or by a widget whose parent is the top window.</dd>
+<dt>void blit_upd(Rect *rect=0)<dd>
+  This method blits (part of) a surface to all its parents.
+  If <tt>sdl_running</tt> is false, this method does nothing.
+  If the surface or one of its parents is not hidden, then the screen is updated.
+  If <tt>rect</tt> is zero then the whole surface is blitted and updated.
+<dt>void draw_blit_upd()<dd>
+  Calls draw(), then blit_upd().
+  If <tt>sdl_running</tt> is false, this method does nothing, so it is useful after
+  the widget has been modified.</dd>
+<dt>void set_title(const char* new_t,bool upd=true)<dd>
+  To modify the title. If upd is true, then the new title will be blitted and shown.</dd>
+<dt>virtual void draw()=0<dd>
+  Each subclass has an implementation for this virtual method.</dd>
+</dl>
+NB! You do not need to use these drawing and blitting methods in your program. E.g. if a picture never will
+be hidden, then you can draw it directly to the top window, then call SDL_UpdateRects().</dd>
+</tr>
+
+
+<tr>
+<td class="bold">TopWin:WinBase
+<td>The topwindow.
+<dl>
+<dt>TopWin(Rect rect,const char* title,<br>
+  &emsp; Uint32 init_flag,Uint32 video_flag,bool accel,void (*draw)(),void (*set_icon)())<dd>
+  The constructor.<br>
+  <tt>init_flag</tt> is is or'ed with SDL_INIT_TIMER|SDL_INIT_VIDEO and passed to SDL_Init().<br>
+  <tt>video_flag</tt> is passed to SDL_CreateWindow().<br>
+  If <tt>accel</tt> is true, then hardware accelleration on (parts of) the screen is possible.<br>
+  The function <tt>set_icon</tt> can be used (if not null) to set the icon of your application.</dd>
+<dt>SDL_Texture *texture<br>
+    SDL_Renderer *renderer<dd>
+  Can be used to draw a widget using hardware acceleration. They are 0 if <tt>accel</tt> (in the
+  constructor) is false.</dd>
+<dt>void refresh(Rect *rect=0)<dd>
+  This method is called when drawing and blitting of a widget has been done and the screen is updated. It calls 
+  SDL_LockTexture() etc. if <tt>accel</tt> was true, or SDL_UpdateWindowSurface() if it was false. 
+  You normally don't have to bother about this method.
+</tr>
+
+<tr>
+<td class="bold">BgrWin:WinBase
+<td>This is a background widget and also a canvas for drawing.
+<dl>
+<dt>BgrWin(WinBase *pw,Rect rect,const char* title,<br>
+  &emsp; void (*display_cmd)(BgrWin*),<br>
+  &emsp; void (*down_cmd)(BgrWin*,int x,int y,int but),<br>
+  &emsp; void (*moved_cmd)(BgrWin*,int x,int y,int but),<br>
+  &emsp; void (*up_cmd)(BgrWin*,int x,int y,int but),<br>
+  &emsp; Uint32 bgcol)<dd>
+  <tt>display_cmd()</tt> will be assigned to the virtual <tt>draw()</tt>
+    method of the base class. The 3 other functions are for handling mouse clicks. A BgrWin can be made movable
+    if these functions are assigned to <tt>mwin::down</tt>, <tt>mwin::move</tt>, <tt>mwin::up</tt> respectively
+    (where <tt>mwin</tt> is a namespace). See method <tt>keep_on_top()</tt>.
+</dd>
+<dt>void (*display_cmd)(BgrWin*)<dd>
+  This function, assigned to the class <tt>draw()</tt> method, will be called (if it is non-zero) with as
+  parameter the value of <tt>this</tt>, so you can investigate e.g. the background color of the BgrWin.</dd>
+<dt>void (*down_cmd)(BgrWin*,int x,int y,int but)<dd>
+  This function is called if the mouse is clicked.</dd>
+<dt>void (*moved_cmd)(BgrWin*,int x,int y,int but)<dd>
+  The function that is called repeatedly when the mouse is moving. NB! In order to prevent a big number
+  of useless motion events, default the statement
+  <tt>SDL_EventState(SDL_MOUSEMOTION,SDL_IGNORE)</tt> is active, so motion events will <b>not</b>
+  be transferred. Therefore you should enable them inside the <tt>down_cmd</tt> function.</dd>
+<dt>void (*up_cmd)(BgrWin*,int x,int y,int but)<dd>
+  The function called when the mouse is released. The mouse motion events are again disabled automatically.
+</dl>
+</tr>
+
+<tr>
+<td class="bold">Button:WinBase</td>
+<td>A push button.
+<dl>
+<dt>Button(WinBase *pw,Style st,Rect rect,Label lab,void (*cmd)(Button*),const char* title=0)<dd>
+  The constructor.
+  </dd>
+<dt>bool is_down<dd>
+  The state of the button.</dd>
+<dt>Style style<dd>
+  5 styles are implemented, three of them to be used for the label of a CmdMenu widget.</dd>
+<dt>Label label<dd>See above.</dd>
+<dt>void (*cmd)(Button*)<dd>
+  The function to call when the button is clicked. This happens before the draw() command is called,
+  so the label of the button can be modified by the function. Normally a lambda function is used here.
+  A Button has no callback function for mouse release.</dd>
+</dl>
+
+<tr>
+<td class="bold">HSlider:WinBase</td>
+<td>A horizontal slider. The most important variables and methods:
+<dl>
+<dt>HSlider(WinBase *parent,Style st,Rect rect,int maxval,<br>
+  &emsp;const char* title,void (*cmd)(HSlider*,int fire,bool rel),bool rel_cmd=false)<dd>
+  <tt>rect.h</tt> can be 0, a default height is used.<br>
+  <tt>cmd()</tt> specifies the callback function, that is also responsible for the text
+  that shows the value of the slider.<br>
+  Notice the last parameter: <tt>rel_cmd</tt>. If this is true, then the callback function will
+  be called also at mouse up (mouse button released), if it is false then only at mouse down and
+  mouse moved.</dd>
+<dt>int def_data<br>int *d</dt><dd>
+  The actual value for a slider is stored in an integer, via pointer <tt>d</tt>, in order to facilitate that different
+  sliders share the same data, or that one slider has several tasks.
+  In the default case its own <tt>def_data</tt> is used. See the
+  <a href="#cookbook"><b>Cookbook</b></a> chapter.</dd>
+<dt>char *text<dd>
+  The text indicating the slider value. Usually this text is set by global function <tt>set_text()</tt>,
+  so informative text can be created if needed.
+<dt>Style style<dd>
+  Two styles are available. The small white lines indicating the possible positions of the slider knob
+  are left out if <tt>style.param</tt> is non 0.</dd>
+<dt>void (*cmd)(HSlider*,int fire,bool rel)<dd>
+  The function that is called when the slider knob has been moved (then <tt>rel</tt> is <tt>false</tt>) or
+  if the mouse button has been released (then <tt>rel</tt> is <tt>true</tt>). This function also can be used from other
+  places in your program. In this case the parameter <tt>fire</tt> can be used to convey extra information (its
+  value is 1 if called by the slider itself).</dd>
+<dt>int &value()<dd>
+  For setting and getting the slider value.</dd>
+<dt>void set_hsval(int val,int fire=1,bool do_draw=true,bool rel=false)<dd>
+  A method to set the slider value. If <tt>fire</tt> is non-zero, then <tt>cmd</tt> is called with
+  appropriate parameters. If <tt>do_draw</tt> is true, then the slider will be redrawn.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">VSlider:WinBase</td>
+<td>A vertical slider, similar to HSlider.
+<dl>
+<dt>VSlider(WinBase *parent,Style st,Rect rect,int maxval,<br>
+    &emsp;const char* title,<br>
+    &emsp;void (*cmd)(HSlider*,int fire,bool rel),bool rel_cmd=false)<dd>
+  <tt>rect.w</tt> can be 0, a default width will be used. The text of the slider value will be drawn
+  directly to the parent widget.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">HVSlider:WinBase</td>
+<td>A 2-dimensional slider. The values are specified with a struct:
+  <tt>Int2 { short x, y; }</tt>
+<dl>
+  <dt>HVSlider(WinBase *parent,Style st,Rect rect,Int2 maxval,<br>
+     &emsp;const char* title,<br>
+     &emsp;void (*cmd)(HVSlider*,int fire,bool rel),bool rel_cmd=false)<dd></dd>
+</dl>
+</td>
+
+<tr>
+<td class="bold">Dial:WinBase</td>
+<td>A dial with characteristics similar to the sliders. Control with the mouse is in the
+horizontal direction, as this is faster then moving the mouse in a circular way.
+<dl>
+<dt>Dial(WinBase *pw,Style st,Rect rect,int maxval,<br>
+    &emsp;const char* title,void (*cmd)(Dial*,int fire,bool rel),bool rel_cmd=false)<dd>
+  The height of the rectangle, <tt>rect.h</tt> is don't care, the widget is square
+  always.</dd>
+</dl>
+</tr>
+
+</tr>
+
+<tr>
+<td class="bold">CheckBox:WinBase</td>
+<td>A checkbox button.
+<dl>
+<dt>CheckBox(WinBase *pw,Style,Rect,Label lab,void (*cmd)(CheckBox*))<dd>
+The constructor. Two styles available.</dd>
+<dt>bool def_val<br>bool *d<dd>
+The actual value for a checkbox can be stored in a separate bool.
+In the default case its own <tt>def_val</tt> is used, via pointer <tt>d</tt>.
+<dt>bool &value()<dd>
+Dereferencing <tt>d</tt>.</dd>
+<dt>void (*cmd)(CheckBox*)<dd>
+  Called when clicked.</dd>
+<dt>void set_cbval(bool,int fire,bool do_draw=true)<dd>
+  A method to set the checkbox value. If <tt>fire</tt> is non-zero, then <tt>cmd</tt> is called with
+  appropriate parameters. If <tt>do_draw</tt> is true, then the checkbox will be redrawn.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">RButton</td>
+<td>Used in RButWin
+<dl>
+<dt>
+  RButton()<br>
+  RButton(Label lab)<dd>
+  Constructors</dd>
+<dt>
+  Label label<dd></dd>
+</dl>
+<tr>
+<td class="bold">RButtons:WinBase</td>
+<td>
+  A group of radio buttons, of class RButton. Only one of them can be active.
+<dl>
+<dt>RButtons(WinBase *parent,Style st,Rect rect,const char *title,bool maybe_z,<br>
+    &emsp;void(*rb_cmd)(RButtons*,int nr,int fire))<dd>
+  The constructor. The value is initialized to -1, which means: no active button.</dd>
+<dt>bool maybe_z<dd>
+  If true, then a second mouse click on the active button has the effect that no button will be active.</dd>
+<dt>Style style<dd>
+  Two styles are provided: one with a list of button names (one of them highlighted), and one with
+  tick widgets. Some extra styles are used for menu buttons.</dd>
+<dt>void (*rb_cmd)(RButtons*,int nr,int fire)<dd>
+  This function is called if a button is clicked.
+  <tt>nr</tt> is the number of the clicked button, starting from zero for the first button. <tt>fire</tt>
+  has value 1 if the clicked button is different from the previous button, else 0.
+  The <tt>fire</tt> value can be used as extra information if this function is called from another place in
+  your program.</dd>
+<dt>RButton *add_rbut(Label label)<dd>
+  Adds a button. Radio buttons will have a number, starting from 0. <tt>label</tt> is a struct as described
+  before.</dd>
+<dt>void set_rbut(RButton *rb,int fire,bool do_draw=true)<dd>
+  Set the active button. If <tt>fire</tt> is non-zero, then <tt>rb_cmd</tt> will be called.
+  If <tt>do_draw</tt> is true, the button will be redrawn.</dd>
+<dt>void set_rbutnr(int nr,int fire,bool do_draw=true)<dd>
+  Similar, the desired button specified as a number.</dd>
+<dt>int& value()<dd>
+  Returns the active button as a number. If none is active, then -1 is returned.</dd>
+<dt>void reset()<dd>
+  Remove all buttons.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">RExtButton:WinBase</td>
+<td>One of the radio buttens that are controlled by a ExtRButCtrl.
+<dl>
+<dt>RExtButton(WinBase *pw,Style st,Rect rect,Label lab,int id)<dd>
+  <tt>rect.h</tt> and/or <tt>rect.w</tt> may be 0, they will get a default value.</dd>
+<dt>ExtRButCtrl *rxb_ctr<dd>
+  A pointer to the ExtRButCtrl.</dd>
+<dt>int id<dd>
+  Used as identifier</dd>
+<dt>Style style<dd>
+  3 styles are provided. Two of them are especially fit for creating tab-controlled windows.</dd>
+<dt>Label label<dd></dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">ExtRButCtrl</td>
+<td>This is the control part of one group of radio buttens of class RExtButton:WinBase, that each can
+  be placed where you want them.
+<dl>
+<dt>ExtRButCtrl(Style st,void (*cmd)(RExtButton*,bool is_act))<dd>
+  Notice that the constructor does'nt have a <tt>WinBase *parent</tt> parameter, because it's not
+  a widget. The <tt>st</tt> style parameter is copied to the RExtButton's.</dd>
+<dt>int butnr<dd>
+  The number of the last added RExtButton.</dd>
+<dt>bool maybe_z<dd>
+  If set to true, then a second mouse click on the active button has the effect that no button will be active.</dd>
+<dt>void (*reb_cmd)(RExtButton*,bool is_act)<dd>
+  This function will be called if a button is clicked, in this case <tt>is_act</tt> will be true.
+  If <tt>maybe_z</tt> has been set to true and the button is clicked again, then the function is called
+  again, with parameter <tt>is_act</tt> false.</dd>
+<dt>set_rbut(RExtButton* rb,int fire)<dd>
+  Set the active button.</dd>
+<dt>void reset()<dd>
+  None of the radio buttons will be active.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">TextWin:WinBase</td>
+<td>A non-editable text window. If a new text line is inserted and the window was full, then all
+  lines will be shifted 1 place upward. The lines will be written at a distance TDIST (= 14) pixels.
+<dl>
+<dt>TextWin(WinBase *pw,Style,Rect rect,int lmax,const char* title)<dd>
+  <tt>rect.h</tt> may be 0, it will get a height sufficient to contain <tt>lmax</tt> text lines.<br>
+  2 styles are provided.</dd>
+<dt>int lmax<dd>
+  The maximum number of text lines before scrolling upwards will occur.</dd>
+<dt>char (*textbuf)[100]<dd>
+  The lines are stored as strings.</dd>
+<dt>void add_text(const char* txt,bool do_draw)<dd>
+  Add a text line. The <tt>txt</tt> string may contain '\n' (newline).
+  If <tt>do_draw</tt> is true, then the complete TextWin will be drawn and updated.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">HScrollbar:WinBase</td>
+<td>A horizontal scrollbar.
+<dl>
+<dt>HScrollbar(WinBase *pw,Style st,Rect,int range,void (*cmd)(HScrollbar*))<dd>
+  The constructor.</dd>
+<dt>Style style<dd>
+  There are 2 styles: without and with 2 small buttons for repeating single-step operation when the mouse
+  button is kept down. The step value is set by st.param2</dd>
+<dt>int range<dd>
+  In general the width of a scrollbar is choosen equal to the width of the window that is controlled by the
+  scrollbar. Then <tt>range</tt> is the width of a bigger window that can be made visible if the scrollbar knob
+  is moved.</dd>
+<dt>void (*cmd)(HScrollbar* sb)<dd>
+  This function will be called if the scrollbar knob is moved. Normally this function should set
+  some variable that controls which part of a bigger, virtual window has to be be drawn, and then call
+  the drawing function of this window.</dd>
+<dt>void set_range(int range,bool upd=true)<dd>Suppose that an actual window and its scrollbar have the same width,
+  and a virtual window with width 200 must be made visible. Then <tt>set_range(200)</tt> would be appropriate.
+  If <tt>upd</tt> is false, then no redraw will be performed.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">VScrollbar:WinBase</td>
+<td>A vertical scrollbar, similar to HScrollbar.</td>
+</tr>
+
+<tr>
+<td class="bold">DialogWin:WinBase</td>
+<td>A dialog widget, containing an editable text area. It can be edited after a mouse click in
+  this area. A cursor will be shown then, which can be moved with the left and right arrow keys.
+  The only special key is <tt>&lt;ctrl>d</tt>, which will clear the text line. If entered text is too long for the
+  text area, then the line is shifted to the left.
+<dl>
+  <dt>DialogWin(WinBase *pw,Rect rect)<dd>
+    <tt>rect.h</tt> may be 0, the height is always 2*TDIST.</dd>
+  <dt>const char *label<dd>
+    The label above the text area. It is assigned by method dialog_label().</dd>
+  <dt>int cmd_id<dd>
+    Used as a parameter for the callback function.</dd>
+  <dt>void (*cmd)(const char* text,int cmd_id)<dd>
+    This callback function must be assigned by the user. It will be called when you hit enter,
+    <tt>text</tt> will be the text from the text area.</dd>
+  <dt>void dialog_label(const char *s,Uint32 col=0)<dd>
+    Method to set the label. If <tt>col</tt> is non-zero then it will be used as background color
+    for the label text, e.g. to highlight it if user input is expected.</dd>
+  <dt>void dialog_def(const char *str,void(*cmd)(const char* text,int cmd_id),int cmd_id)<dd>
+    This method sets the default text for the text area, assigns <tt>cmd()</tt>
+    and <tt>cmd_id</tt>.
+    </dd>
+  <dt>void dok()<dd>
+    Data-okay: intended to be used by other widgets. It calls <tt>cmd()</tt> with the current text string.</dd>
+</dl>
+</tr>
+<tr>
+<td class="bold">CmdMenu</td>
+<td>A menu widget.
+<dl>
+  <dt>CmdMenu(Button *src)<dd>
+    CmdMenu itself is not really a widget, the work is done by a Button and a RButWin. The Button <tt>src</tt>
+    should have a <tt>cmd</tt> that initializes the menu by calling first member function <tt>init()</tt>,
+    and then several times <tt>add_mbut()</tt> in order to add the menu buttons.</dd>
+  <dt>bool init(int wid,int nr_buttons,void (*menu_cmd)(int id,int nr,int fire))<dd>
+    <tt>wid</tt> will be the width of the menu. <tt>nr_buttons</tt> sets the number of menu buttons.
+    This function will create a RButWin whose member <tt>rb_cmd()</tt> will have the value of parameter
+    <tt>menu_cmd()</tt>. When the user clicks a menu button, then <tt>menu_cmd()</tt> will be called.
+    Then parameter <tt>nr</tt> is equal to the sequence number of the menu button, and <tt>id</tt> is
+    equal to the <tt>id</tt> of Button <tt>src</tt> of the constructor.</dd>
+  <dt>void add_mbut(const char *txt)<dd>
+    Each call if this function will create a menu button. If it has been called <tt>nr_buttons</tt> times,
+    then the actual menu will be created and blitted to the screen. When the user has clicked one
+    of the menu buttons, then <tt>menu_cmd()</tt> is executed. If this function calls <tt>close()</tt>
+    then the menu will disappear.</dd>
+  <dt>int def_val<br>int *d</dt><dd>
+    The value of the current menu item is stored in an integer, via pointer <tt>d.</tt></dd>
+  <dt>int& value()<dd>
+    Get the value of the last clicked menu item, or set a new value. If you want the menu to start up
+    blank, then use <tt>value() = -1</tt>.</dd>
+  <dt>bool sticky<dd>
+    If true, then the menu will stay visible after it has been clicked. This variable should be
+    controlled by another widget or by the program, not by it's own menu command.</dd>
+  <dt>void mclose()<dd>
+    To close the menu (which actually is a BgrWin widget). Not to be used in your code: menu's are closed
+    automatically, unless <b>sticky</b> is true.</dd>
+</dl>
+If you think that a menu widget is somewhat complicated then you are right. Look for an example in
+the demo program (testsw.cpp).
+</tr>
+<tr>
+<td class="bold">EditWin:WinBase</td>
+<td>A simple text editor. The arrow keys, the backspace key and the enter keys work as
+    expected. Long lines are supported. A whole line can be deleted with <tt>&lt;ctrl>d</tt>.
+    <p>
+    This widget might also be useful as a convenient text buffer, as all memory allocation
+    goes automatic. The methods that are of interest for the user are as follows.
+<dl>
+<dt><div>
+EditWin(WinBase *pw,Rect rect,const char *title,<br>
+  &emsp;void (*cmd)(int ctrl_key,int key))
+</div>
+<dd>
+The constructor. <tt>(*cmd)()</tt> specifies a callback function that will be called at each key stroke.</dd>
+<dt>void set_line(int n,bool upd,const char *form,...)
+<dd>A printf-like method to assign line number <tt>n</tt>.</dd>
+<dt>void insert_line(int n,bool upd,const char *form,...)
+<dd>Similar, but following lines will be shifted one position.</dd>
+<dt>const char *get_line(int n)
+<dd>Returns a pointer to the data at line <tt>n</tt>.
+<dt>void get_info(bool *active,int *nr_of_lines,int *cursor_pos,int *nr_chars,int *total_nr_chars)
+<dd>To get information about the stored data. The pointers can be zero.</dd>
+<dt>Line **lines
+<dd>A buffer containing pointers to struct's of type <tt>Line</tt> that also is used by <tt>DialogWin</tt>.
+Notice that a pointer is zero in case of an empty line.
+<dt>int linenr
+<dd>The buffer index of the last line.</dd>
+<dt>int y_off
+<dd>Rendering of text will start at pixel number <tt>y_off</tt>. Normally this variable
+will be set by a vertical scrollbar.<dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">RenderText</td>
+<td>A class to draw ascii text to an SDL_Surface. Each font needs one instance of this class.
+<dl>
+<dt>RenderText(TTF_Font *font,SDL_Color tcol)<dd>
+  The constructor. For <tt>font</tt> you could use e.g. <tt>draw_ttf->ttf_font</tt>. To get a font of different
+  size, TTF_OpenFont() has to be called. A global <tt>const char* def_fontpath</tt> is provided, it is equal
+  to the file that's used for <tt>draw_ttf</tt>.</dd>
+<dt>TTF_Font *ttf_font<dd>
+  The font, created with TTF_OpenFont()<dd>
+<dt>SDL_Color text_col<dd>
+  The font color.
+<dt>SDL_Surface *chars[]<dd>
+  Not of interest for the user. All characters of the alphabet are blitted here when they are used
+  for the first time, calling TTF_RenderText_Blended() from the SDL_ttf library.</dd>
+<dt>int draw_string(Render rend,const char *txt,Point point)<dd>
+  Will blit the characters of <tt>txt</tt> to the appropriate place of <tt>win</tt>, taking them from surface <tt>chars[]</tt>.
+  The place where you want them is set by parameter <tt>point</tt>. Newlines (character '\n') are supported,
+  they will be blitted on a new line. This method returns the value of variable <tt>y</tt> of a Point that
+  could be used with the next call of <tt>draw_string</tt>.</dd>
+<dt>int text_width(const char *txt)<dd>
+  Returns the width of the text after rendering.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">Lamp</td>
+<td>A status indicator.
+<dl>
+<dt>Lamp(WinBase *pw,Rect rect)<dd>
+  The constructor. Only <tt>rect.x</tt> and <tt>rect.y</tt> are used, they set the upper left corner of the lamp.</dd>
+<dt>void draw()<dd>
+  A Lamp is <i>not</i> a WinBase, and <i>not</i> incorporated in the SDL_Surface hierarchy. Normally you
+  must call this <tt>draw()</tt> method inside the <tt>display_cmd()</tt> of the BgrWin that contains the lamp,
+  in order to make it visible at startup.</dd>
+<dt>void set_color(Uint32 col)<dd>
+  The indicator will be drawn with color <tt>col</tt>, which
+  must be in the format 0xRRGGBBAA (as needed by the SDL_gfx library),
+  e.g.: <tt>0xff00ff</tt> (the color green, opaque).
+</dl>
+</td>
+</tr>
+<td class="bold">Message</td>
+<td>A fixed label plus a variable text.
+<dl>
+<dt>Message(WinBase *pw,Style style,const char* label,Point top)<dd>
+  <tt>top</tt> is the left upper corner of the label.</dd>
+<dt>const char *label<dd>The fixed label. It will be drawn with the default font.</dd>
+<dt>void draw_label(bool upd=false)<dd>
+  To draw and blit the label.</dd>
+<dt>void draw_mes(const char *form,...)<dd>
+  To draw, blit and update the variable text. Format parameters like printf().</dd>
+<dt>Style style<dd>
+  If style.st = 0, then a dark-blue font for the variable text.<br>
+  If 1, then a 3D-effect border. If style.param is non-zero, then it will be used as the
+  background color.<br>
+  If 2, then a black font.<br>
+  If 3, then <tt>custom_ttf</tt> will be used.</dd>
+<dt>RenderText *custom_ttf<dd>
+  The font for the variable text if style.st = 3.</dd>
+</dl>
+</table>
+
+<h2>Other classes</h2>
+<table>
+<tr>
+<td class="bold">Render
+<td>A structure passed to each widget.
+<dl>
+  <dt>Render()<br>
+      Render(SDL_Renderer*)<dd>
+  Constructors.
+  <dt>SDL_Renderer *render
+  <dt>SDL_Surface *surf<dd>
+  Surface and attached renderer, initialized by <tt>init_gui()</dd?
+</dl>
+</tr>
+
+<tr>
+<td class="bold">Label
+<td>This class is used for labeling widgets. A Label has 4 variables and several constructors.
+<dl>
+  <dt>Label(const char* txt)<br>
+      Label(void (*draw)(Render,int nr,int y_off),int id=0)<br>
+      Label(const char *txt,void (*draw)(Render,int nr,int y_off),int id=0)<dd>
+  When a Label is drawn, then usually a fixed string <tt>txt</tt> is drawn (if it is non-zero),
+  and/or function <tt>draw</tt> is called (if it is non-zero). The 2nd parameter of <tt>draw()</tt>
+  is copied from <tt>id</tt>.
+  <dt>int id<dd>
+    Used as a parameter for <tt>draw_cmd().</tt></dd>
+  <dt>void (*draw_cmd)(Render rend,int nr,int y_off)<dd>
+    If non-zero, this function is called when the widget is drawn.
+    <tt>nr</tt> can be the button number in case of radio buttons.
+    Then also <tt>y_off</tt> can get a value in case they are shifted by a scrollbar.</dd>
+  <dt>const char *str<dd>
+    A pointer to the title string</dd>
+  <dt>RenderText *render_t<dd>
+    Specifies the font, default: <tt>draw_ttf</tt>.</dd>
+  <dt>void draw(Render rend,Point pnt)<dd>
+    To draw <tt>str</tt> as text, and to call <tt>draw_cmd(win,id,pnt.y)</tt>.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">Style
+<td>This class is used to control the appearance of widgets.
+<dl>
+  <dt>Style(int st)<br>
+      Style(int st,Uint32 param)<br>
+      Style(int st,Uint32 param,int param2)<dd>
+    The constructors.</dd>
+  <dt>const int st<dd>
+    This integer is for specifying the specific appearance of a widget.</dd>
+  <dt>Uint32 param<dd>
+    Can specify a color.</dd>
+  <dt>int param2<dd>
+    Can be used by the drawing routine of a widget.</dd>
+</dl>
+</tr>
+
+<tr>
+<td class="bold">Lazy
+<td>Using this structure, e.g. a lazy scrollbar can be created: if the scrollbar is moved slowly,
+    then each position of the scrollbar will have effect. If however a fast movement is applied, then only
+    the first and the last position will be considered. See the demo program for an example.
+</td>
+</tr>
+
+</table>
+
+<h2>Global variables</h2>
+<table>
+<tr><td>
+<dl>
+<dt>bool sdl_running<dd>
+Will be true after execution of the first statement of <tt>get_events()</tt>. If <tt>sdl_running</tt>
+is still false, drawing to the screen is not useful (though it's not forbidden).</tt>
+<dt>RenderText *draw_ttf, *draw_title_ttf, *draw_mono_ttf<dd>
+  <tt>draw_title_ttf</tt>: TrueType font FreeSans, pointsize 13, color darkblue, used for titles.<br>
+  <tt>draw_mono_ttf</tt>: TrueType font FreeMono, pointsize 12, regular, for editable text.<br>
+  <tt>RenderText *draw_ttf</tt>: TrueType font FreeSans, pointsize 12, regular, for everything else.
+</dd>
+<dt>const char *def_fontpath<dd>
+The filename that's used for <tt>draw_ttf</tt>.
+<dt>Uint32 cWhite, cBlack, cGrey, cRed, cBlue, cForeground, cBackground, cBorder, cPointer, cScrollbar<dd>
+Predefined colors for SDL_Surface's. These can be modified if needed</dd>
+<dt>Point alert_position<dd>The left-upper corner of the alert window. Default is (4,4).
+<dt>void (*handle_kev)(SDL_keysym *key,bool down)<dd>
+  Can be assigned to your keyboard handler function.
+<dt>void (*handle_rsev)(int dw,int dh)<dd>
+  Can be assigned to your event handler function for widget resizing.
+</dl>
+</table>
+
+<h2>Global functions</h2>
+<table>
+<tr><td>
+<dl>
+<dt>void get_events()<dd>
+After you have specified all your widgets this function should be called. It starts with
+a <tt>draw_blit_recur()</tt> of the top widget, as returned from <tt>new TopWin()</tt>. Then it enters
+an infinite loop, waiting for mouse clicks and keystrokes.
+Also a built-in queue for
+user events (originating from function <tt>send_uev</tt>) is polled.</dd>
+<dt>void send_uev(void (*)(int))<dd>
+As mentioned in the introduction, threads can communicate with the main thread using messages.
+Locking of the main thread is not needed, the toolkit will do it for you. A message consists
+of a lambda function with one parameter. So if a thread wants to perform some graphics, then
+send a message, e.g:
+<pre>
+  send_uev([](int) {
+    Rect *r=rp(20,20,40,40);
+    bgwin->clear(r);
+    pointer_draw();
+    bgwin->blit_upd(r);
+  },0);
+</pre>
+As known, lambda functions are evaluated at the moment that they are called. This implies that captured
+variables from the environment (using capture specification [=] or [&]) are taken at that moment.
+This might be too late, because a captured variable may have changed in the mean time. Thus these variables
+will have to be queued also. You can use the int parameter of send_uev for this purpose.
+It will be used as the parameter for the lambda function call.
+<p>
+The intern message queue has a default length 50. If it has to grow, then a warning is sent to stdout. This
+is harmless, but possibly there is an issue in your code.</dd>
+
+<dt>void alert(const char *form,...)<dd>
+An alert window will appear, which can be moved with the mouse.
+The parameters are the same as for printf. Great care has been taken to guarantee that
+this function can be called in every state that a running program is in. If a topwindow
+has not yet been created, then the alert message will be written to stdout.</dd>
+
+<dt>SDL_Color sdl_col(Uint32 c)<br>
+    Uint32 int_col(SDL_Color c)<dd>
+These functions translate a color in RGBA format (like: 0xf0f0f0ff) to an SDL_Color, and v.v.
+<dt>void set_text(char *&txt,const char *fs,...)<dd>
+This printf-like function is used most often to set the text at sliders. If <tt>txt</tt> is zero,
+then it will be allocated. No actual drawing will be done.</dd>
+<dt>Rect *rp(int x,int y,int w,int h)<dd>
+This is a convenience function: to create a SDL_Surface you always need a pointer to a
+rectangle (Rect is actually a subclass of SDL_Rect). This function creates one, 
+however notice that it's always the same Rect.<br>
+Also notice that this function is specified in header file sdl-widgets.h, so each source file will get
+its own instance.
+<dt>SDL_Surface *create_pixmap(const char* pm_data[])<dd>
+For small icons the X-Windows XPM format is ideal, because the pixmap data is normal C code
+and thus can be included in your source code. Pixmaps can be created e.g. with the tool xpaint.<br>
+The colors in the pixmap look like #606060 (this is light grey).
+The function makes black pixels (color: #0 or: <tt>None</tt>) translucent.
+</dd>
+<dt>SDL_Cursor *init_system_cursor(const char *image[])<dd>
+The standard SDL cursor is black with a white border, which is not very convenient for white backgrounds.
+This function can create an SDL_cursor of 32x32 pixels usable by SDL_SetCursor(). The <tt>image</tt> 
+parameter is a normal XPM struct,
+with an added last line for the hot spot. The code for <tt>init_system_cursor</tt> is borrowed from the
+SDL distribution, modified such that <tt>image</tt> data may be smaller then 32x32. See file pixmaps.h for
+an example.
+</dd>
+<dt>void file_chooser(void (*cmd)(const char* f_name))<dd>
+To choose a file. If called, then a temporary window will pop up, showing the contents of
+the current directory: directories (in blue color), 
+files (in black), links (in black, with '<tt>@</tt>' added).
+If a directory name is clicked, then the current
+directory will become equal to this directory, whose contents now will be shown. If a file name is clicked,
+then the pop-up window will be hidden and <tt>cmd()</tt> will be called (if it's non-zero).<br>
+You can use <tt>id</tt> if the function is called multiple times. The name of the current directory
+always will be shown in the banner of your window manager.
+</dd>
+<dt>void working_dir(void (*cmd)(const char* dir_name))
+<dd>
+To choose a new working directory. If called, then a temporary window will pop up, showing the directories
+present in the current directory. If a directory name is clicked, then the current
+directory will become equal to this directory,
+then the pop-up window will be hidden and <tt>cmd()</tt> will be called (if non-zero).</dd>
+<dt>void print_h()
+<dd>Print the full widget hierarchy and the (temporary) on-top widgets to the screen. Useful for debugging.
+</dl>
+</td>
+</tr>
+</table>
+<h2>Hello World</h2>
+<table>
+<tr><td>
+<pre>
+#include &lt;sdl-widgets.h&gt;
+
+TopWin *top_win;
+Button *but;
+
+int main(int,char**) {
+  top_win=new TopWin("Hello",Rect(100,100,120,100),0,0,false,
+    []() {
+      top_win->clear();
+      draw_title_ttf->draw_string(top_win->win,"Hello world!",Point(20,40));
+    }
+  );
+  but=new Button(top_win,0,Rect(5,10,60,0),"catch me",
+    [](Button *b) {
+      static int dy=60;
+      b->hide();
+      b->move(0,dy);
+      b->hidden=false;
+      dy= dy==60 ? -60 : 60;
+    });    
+  get_events();
+  return 0;
+}
+</pre>
+</td></table>
+This can be compiled as follows (supposing that sdl-widgets.o is in the next higher directory):
+<p>
+<pre>   g++ -std=c++11 -I..  hello.cpp ../sdl-widgets.a -o hello $(sdl2-config --cflags --libs) -lSDL2_ttf
+</pre>
+<p>
+As an extra bonus there is a button that will move if you click it. Probably you have already a 'hello'
+executable, as this program is part of the distribution and compiled by 'make'.
+<p>
+Notice the option -std=c++11, which tells g++ to use the new C++ standard.
+
+<a name="cookbook">
+<h2>Cookbook for less-trivial applications</h2></a>
+The "looks" of a GUI is an interesting subject, but if you ever wrote
+a not-so-simple application you'll have perceived that the difficult part is the initialization
+of all the widgets in the right order, the interaction between them, and
+also to make the application fool-proof: an unexpected user action should result in a neat warning,
+not in a crash. At that it would be convenient if code is not replicated inside the program,
+in order to make maintenance easier. This implies e.g. that the callback function of
+a widget could be called from other places, during initialization or from the callback
+functions of other widgets.
+<p>
+The first choice: should widgets and other objects be on the stack or on the heap?
+A simple rule is: <i>if</i> the initialisation of an object does not depend on other objects,
+<i>or</i> if that other objects are coded in the same file, <i>then</i> they can be on the stack. In
+all other cases use the heap, allocate objects in the right order with <tt>new</tt>.
+<p>
+<h4>The main() function</h4>
+After evaluation of the arguments issued by the user, the first thing you do is to
+create a top window. After this e.g. new colors can be created. From now on, alert
+messages will be displayed in a small subwindow.
+<p>
+Then if needed an initialization file can be read. If this may affect the properties
+of widgets, then remember that these widgets have not been initialized yet. In general
+it is convenient to read a config file as late as possible.
+<p>
+Now is the time to create all widgets. For widgets that should be invisible set the
+<tt>hidden</tt> variable to <tt>true</tt>. The <tt>draw()</tt> member function should 
+not be called, this is done automatically at the start of <tt>get_events()</tt>.
+<p>
+A widget may have a complicated callback
+function and it can be very handy to call this function after the widget's creation, e.g.
+to set the proper text for the widget. As an
+example, a horizontal slider (class HSlider) has a member function
+<tt>void set_hsval(int val,int fire,bool do_draw=true)</tt>. If <tt>fire</tt> is
+non-zero, then the callback function of the slider will be executed.
+Parameter <tt>do_draw</tt> must be false in this stadium, or be assigned to <tt>sdl_running</tt>
+which is false before <tt>get_events()</tt> has been called and true thereafter.
+<p>
+After all widgets have been instantiated, call <tt>get_events()</tt>. The first statement of this 
+function is a <tt>draw_blit_recur()</tt>
+of the top window, which will draw everything recursively. Now the program will start waiting
+for your mouseclicks and keystrokes.
+
+<h4>Where to store the widget values?</h4>
+All widgets contain a pointer called <tt>d</tt> which by default points to a class variable.
+If you want to use the same data for different widgets, then use an external variable,
+and set the <tt>d</tt>'s to point to that variable. Also the opposite is possible: one widget could
+be attached to different data, which often happens in case of tabbed subwindows. Then, if a tab is clicked
+only the <tt>d</tt>'s of the widgets on the subwindow have to be re-assigned, and the widgets re-drawn
+(with <tt>draw_blit_upd()</tt>.
+
+<h4>Threads</h4>
+If a thread other then the main thread wants to write to the screen,
+it should not do this directly. Instead it has to send a message using the <tt>send_uev(&lt;lambda function>)</tt>
+function. The scope selector of the lambda function should be [], not [=] or [&], because the lambda's are
+not specified with std::function. They will be mapped to normal functions, without access to local variables.
+The message will run in the main thread and may draw to the screen safely.
+<p>
+If you are new with respect to lambda's: there is a good introduction in
+<a href="http://www.cprogramming.com/c++11/c++11-lambda-closures.html">
+  www.cprogramming.com/c++11/c++11-lambda-closures.html</a>.
+<p>
+<hr/>
+</body>
+</html>

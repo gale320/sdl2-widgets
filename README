@@ -1,0 +1,53 @@
+======== SDL2-widgets, GUI toolkit using the SDL2 library ========
+
+Version 2.1 - june 2014
+
+This version is built on SDL2. Hardware accelleration can be used locally. However,
+floating, movable subwindows only work in the parts that use software rendering.
+Font library SDL2_ttf is used. Graphics library SDL_gfx is not used, though recently
+it has been ported to SDL2 also. A temporary replacement is provided: shapes.cpp.
+
+SDL2-widgets is aiming at normal, possibly complicated, threaded applications. 
+With hardware accelleration enabled it is also useable for games that SDL is used 
+for mostly.
+
+The toolkit has been tested on Linux (Fedora) and on Windows via MinGW (thanks to
+Javier Carracedo). For Windows, please also read Build-on-Windows.txt.
+
+For more information, read  doc/sdl-widgets.html. There are 3 example  applications,
+their doc files are accessable from doc/index.html.
+
+To compile, run
+  ./configure
+
+This is a very minimal test whether a compiler and the SDL2 libraries are present on 
+your system. Two true-type fonts are needed, in this version these are included.
+If configure was succesful, run
+  make
+
+This will generate:
+  sdl-widgets.a			- the widget library
+  testsw			- a demo program
+  hello/hello			- you guess it
+  make-waves/make-waves		- 4 small audio applications
+  bouncy-tune/bouncy-tune	- compose and play tunes with physical-modelled instruments
+
+In testsw.cpp, there is a widget draw_lissajoux, which can serve as an example of 
+accellerated rendering. It will be displayed if the vertical slider is moved. Notice
+that a floating widget (e.g. the alert box) will erase this widget, and that it will not
+be covered by the floating widget if it is redrawn.
+
+There is no 'make intall', probably it's not needed because this toolkit is simple.
+
+Home page:
+  http://members.chello.nl/w.boeke/SDL-widgets/index.html
+
+For remarks and questions:
+Wouter Boeke
+w.boeke@upcmail.nl
+
+History
+=======
+Compilation also for Windows (may 2014).
+TrueType font files are included.
+SDL2 version 2.0.1 used. Here SDL_Color has field .a iso .unused (nov 2013).

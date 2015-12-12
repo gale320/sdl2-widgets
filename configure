@@ -1,0 +1,37 @@
+echo -n "Searching C++ compiler ... "
+[ -z $(which g++) ] && { echo no; exit; }
+echo yes
+
+echo -n "Searching sdl2-config ... "
+[ -z $(which sdl2-config) ] && { echo no; exit; }
+echo yes
+
+echo "Dummy object-file for testing g++ compiler ..."
+echo "int main(int,char **) { return 0; }" | g++ -c -x c++ -std=c++11 -o tst.o - || { echo "Problems!"; exit; }
+echo "okay"
+
+okay=yes
+LPATH=$(sdl2-config --libs | sed 's/ -l.*//; s/-L//')
+echo "Searching libraries in $LPATH"
+for LIB in SDL2 SDL2_ttf
+do
+  echo -n "library $LIB ... "
+  g++ -L$LPATH -l$LIB tst.o 2>/dev/null
+  if [ $? = 0 ]
+  then echo yes
+  else echo no; okay=no
+  fi
+done
+rm -f a.out
+[ $okay = no ] && { echo "Some libraries are missing"; exit; }
+
+echo "Specify font files ... "
+
+FONTPATH=$PWD/DroidSans.ttf
+FONTPATH_MONO=$PWD/DroidSansMono.ttf
+
+echo "const char* FONTPATH=\"$FONTPATH\";" > config.h
+echo "const char* FONTPATH_MONO=\"$FONTPATH_MONO\";" >> config.h
+
+echo "Created: config.h. Now you can run 'make'"
+ 

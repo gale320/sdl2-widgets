@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Bouncy Tune</title>
+<style type="text/css">
+body {
+  background-color:#F0F0F0;
+  font-family:Verdana,"Luxi Sans";
+  font-size:11pt;
+}
+tt {
+  font-family:"Courier New",Monospace;
+  font-size:11pt;
+  font-weight: bold;
+}
+pre {
+  font-family:"Courier New",Monospace;
+  font-size:11pt;
+  font-weight: normal;
+}
+dt {
+  font-weight:bold;
+}
+hr { width:50%; }
+</style>
+</head>
+<body>
+<center>
+<h1>Bouncy Tune</h1>
+<img src="mail-adr.gif"><br>
+Last updated: jan 2012
+</center>
+<p>
+Physical modelling is a way to simulate musical instruments. This application uses this technique, and 
+also offers the possibility to create tunes. A warning in advance: physical modelling it compute-intensive,
+your old box probably won't handle it.
+<p>
+<center><img src="bouncy-tune.png"></center>
+<p>
+A physical model consists of "masses", connected with "springs". These are visible in the upper window, and have
+an intern equivalent to produce the sound: <i>what you see is what you hear</i>. There are 3 instruments, where the masses
+can move in the X and the Y direction. In the audio model the X and the Y movements are sent to the left and the
+right stereo channel respectively. There are 2 pickup points, the small black dots left and right
+from the mass centers in the graphical model.
+When playing a tune, one of the masses is excited, at the point that is indicated by a small triangle.
+<p>
+But first, let's listen to some sounds. Start the program with no options:<br>
+<pre>    ./bouncy-tune</pre>
+and click the play button (indicated by a triangle, or a red square when clicked).
+Now move one of the masses with the mouse, then release it.
+You will hear a rather weird sound, that if analyzed consists of harmonics that are not very evenly spaced.
+Because of this our ears cannot deduce the pitch exactly, so the distinction between consonant and
+dissonant harmonies is kind of blurred.
+
+<h2>Editing the physical model</h2>
+The masses and springs can be modified, using one of three mouse modes that are controlled by the 3 grey 
+choice buttons at the left. Sound is heard at mouse-down or mouse-up provided that the <tt>play</tt> button is active.
+<dl>
+<dt>Move and modify the masses<dd>
+  <ul>
+  <li><b>left button</b>:
+    Move a mass, then released it. The masses will start to oscillate.
+  <li><b>middle button</b>:
+    Toggle the selected mass between fixed and moving. The fixed state is indicated by a green rectangle,
+    which can be moved, but does not participate in the oscillation.
+  <li><b>right button</b>:
+    If the mass is used as a pickup, it will loose this function, and vice versa. Notice how the generated sound
+    changes. If clicking slightly left from the center the left pickup is affected, else the right one.
+  </ul></dd>
+<dt>Edit masses and springs<dd>
+  <ul>
+  <li><b>left button</b>:
+    Select a mass, indicated by a black circle around it. Three keyboard keys have an effect:<br>
+    - up arrow: the mass will be increased with a factor 1.4, yielding a lower frequency.<br>
+    - down arrow: the mass will be decreased with a factor 1.4, yielding a higher frequency.<br>
+    - <b>D</b> key: the mass is deleted, together with its connected springs.
+  <li><b>middle button</b>:
+    A new mass is created.
+  <li><b>right button</b>:
+    The mass is connected with a spring to a previously selected mass.
+  </ul>
+<dt>Modify the springs, choose excitation point<dd>
+  <ul>
+  <li><b>left button</b>:
+    Select a spring, indicated by a small circle (which has no further use). If the <b>D</b> key was pressed,
+    then the spring will be deleted.
+  <li><b>middle button</b>:
+    Springs exist in 2 strength's: nominal (black line) or weakened (green line). You can toggle between these states
+    using this button. The value of the weakened springs can be controlled by slider <b>low strength</b>.
+    Weakened strings are useful to couple 2 equal mass-spring combinations, e.g. as follows:
+    <br>
+    <img src="weak-strings.png"><br>
+    If the pickup point and the excitation point are on different mass-spring
+    combinations, then the generated sound will have a slow attack. Also the generated sound
+    will be less steady.
+  <li><b>right button</b>:
+    Select the excitation point. This is only relevant if a tune is played (when checkbox <b>play tune</b> enabled).
+  </ul></dd>
+</dl>
+Beneath the mouse-mode choice buttons there are 5 buttons and 3 checkboxes.
+<ul>
+  <li><b>reset to default</b>:
+    The inverse of the foregoing.
+  <li><b>load project ...</b>:
+    (Re)read a project file.
+  <li><b>save project ...</b>:
+    The complete configuration (together with the tune that you created) is written
+    to a file. The name of this file can be choosen in the dialog box beneath. The project file
+    is more or less human readable, and can be called as an option later.
+  <li><b>freeze</b>:
+    The graphical model will not be animated, so you can modify it at ease:<br>
+    <img src="mod-model.png"><br>
+  <li><b>low friction</b>:
+    The frictional losses in the graphical model are much higher than in
+    the audio model. Enabling this checkbox has the effect that both loss values are made equal,
+    yielding a seemingly endless oscillation in the graphical model.
+  <li><b>start writing out.wav</b>:
+    After enabling this checkbox, the small lamp symbol will turn to green, indicating that the program
+    is ready to record, provided that playing mode is on.
+    The recording starts after you moved a mass and released it, the lamp will then
+    turn to red. This goes on until you uncheck the checkbox, or until the playing mode is switched off.
+    A file out.wav is created.<br>
+    If a tune is being played (checkbox <b>play tune</b> enabled, as will be described later), then
+    the recording is started by the play button and stopped when the end of the tune has
+    been reached, or the play button has been disenabled.
+</ul>
+<h2>Instrument control panels</h2>
+The 3 tabbed panels each contain the following controls:
+<ul>
+  <li><b>pizzicato</b>:
+    Normally, during the playing of a note, the friction in the physical model is zero, so long notes
+    can be played. If this checkbox is enabled, then the friction is as set by slider <b>friction</b> from
+    the beginning of the note.
+  <li><b>non-linear</b>:
+    The force from the springs to the masses will be increased at higher signal level, yielding very
+    weird sounds.
+  <li><b>pink noise</b>:
+    If enabled, then pink noise will be injected at the excitation point.
+  <li><b>pickups in-phase<br>
+         pickups anti-phase</b>:
+    If both pickups are present, then x and y signals are sent in-phase/anti-phase to them. This yields
+    a different sound spectrum. If none is selected, then x signals go to the left channel, y signals
+    to the right.
+  <li><b>tuning</b>:
+    As stated in the introduction, the audible pitch of an instrument cannot be descerned very well.
+    With this slider you can control how the 3 different instruments are sounding in combination.
+  <li><b>x/y asymmetry</b>:
+    Movement of the masses in the X and the Y direction is independent inside the physical model.
+    The movements
+    are translated into audio signals going to the left and right stereo channels. With this slider
+    the masses can be made different in the 2 directions, yielding interfering and richer sounds.
+  <li><b>friction</b>:
+    The modelled losses in the springs can be controlled by this slider, and thus the decay of the
+    audio signal. The graphical model is not affected.
+  <li><b>low strength</b>:
+    As stated before, springs come in 2 versions: nominal strength (black line), or weak strength
+    (green line). The actual strength in the last case can be controlled by this slider.
+  <li><b>excitation</b>:
+    When playing a tune, the excited mass is driven by a pulse. The value of this pulse can be
+    controlled by this slider, thus acting as an output volume control, placed in front of the distorsion
+    control.
+  <li><b>volume</b>:
+    Controls the sound volume, behind the distorsion control.
+  <li><b>transfer curve</b>:
+    Non-linear distorsion can be applied to the audio signal. The transfer curve is shown in the
+    small window next to the radio button. The 2 heaviest distorsion modes are good for
+    percussive sounds.
+  <li><b>default = current nodes</b>:
+    After modifying a mass-spring combination (enable checkbox <b>freeze</b>), you can make
+    the default locations of the masses equal to their current position.
+  <li><b>default = current settings.</b>:
+    The current settings will be the default settings for this instrument, used when a tune
+    is started, and also used as starting values when a project is saved. Settings can be
+    modified during the playing of a tune, see chapter Modifications.
+</ul>
+
+<h2>Playing and editing a tune</h2>
+A new tune can be created in the middle window, where the horizontal lines denote the white keys of a piano.
+If checkbox <b>current instr only</b> is enabled, then only the notes for the current instrument and the
+current channel are colored, the other notes will be light grey.
+<p>
+The grey choice buttons beneath put the mouse behaviour in 2 different modes: enter notes, or select.
+<dl>
+<dt>Enter notes<dd>
+  <ul>
+  <li><b>left button</b>:
+    Clicking and releasing the button has the effect that 1 note unit is created. The color and the
+    associated instrument is dependent on which instrument panel (at the leftside) is selected. Each
+    instrument is splitted in 2 parts, equivalent to the X and Y direction in the graphical window.
+    The X part is shown in a dark color, the Y part in a lighter color. The choice widget at the
+    top of the instrument panel controls which part is current.
+    <br>
+    If the mouse button is dragged, then a longer note will appear.
+    <br>
+    If the clicking point is in the white part at the right side of the window, where there are no grey lines,
+    then the handle of the scrollbar beneath will become smaller, indicating that more area is available now.
+    <br>
+    If you click on an existing note, then it will be erased. Dragging also works, the erasing action
+    will stop at the end of the note.
+  <li><b>middle button</b>:
+    The same operation, but when the button is released after dragging, a staccato note is created. This is
+    indicated by a somewhat shorter note unit at the end.
+  <li><b>right button</b>:
+    With this button you can enter multiple note units, covering more then 1 instrument. These notes
+    are shown in a pink color. The instrument that is affected is the one of which the control
+    panel is selected and the X or Y channel is active. If an existing multiple note already contains
+    a component of the affected color, then this component will be erased.
+    <br>
+    If you want to know the components of a multiple note unit, press the <b>I</b> (= info) key and click
+    the note. Then the upper window is replaced by an information window, in which the note contents are listed.
+  </ul>
+  </dd>
+<p>
+<dt>Select mode<dd>
+  Notes can be selected, which is indicated by a white spot within them. The selected notes then can be copied,
+  moved or deleted.
+  <ul>
+  <li><b>left button</b>:
+    If on a (multiple) note, select all components of this note unit and of the note units to the right,
+    until white space or until a note is staccato.
+    <br>
+    If on an already selected note, then this will be unselected until its end.
+    <br>
+    If the button is clicked on a place where there is no note, then all notes above and below will
+    be selected. Dragging the mouse then also works.
+  <li><b>middle button</b>:
+    The same operation, but only the current color (the selected panel) is affected.
+  <li><b>right button</b>:
+    Select all notes at the right side of the cursor.
+  </ul>
+</dd>
+<p>
+<dt>The keyboard keys<dd>
+Some keys that have been pushed ahead of a mouse click invoke a specific action.
+  <ul>
+  <li><b>M</b>:
+    Move selected notes by dragging the mouse.
+  <li><b>C</b>:
+    Copy selected notes by dragging the mouse. The new notes are in selection mode, the copied notes not.
+  <li><b>K</b>:
+    (<u>k</u>eep) Before releasing the mouse: disenable moving or copying.
+  <li><b>P</b>:
+    (<u>p</u>aste) Selected notes are copied at the location where the mouse is clicked (so not by dragging it).
+    The new notes are in selection mode.
+  <li><b>&lt;ctrl></b> : Scroll the window contents horizontally by dragging the mouse.
+    This works more accurate then using the scrollbar.
+  </ul>
+If only a single component (one color) of the notes had been selected, then only this component will be affected.
+If you loosed track: use the <b>I</b> key.
+</dd>
+<p>
+<dt>The buttons<dd>
+  <ul>
+  <li><b>unselect</b>:
+    If one or more notes have been selected, then the background of this button is colored rose. If you click it,
+    all selected notes will be deselected, and the button color returns to light blue.
+  <li><b>delete sel</b>:
+    All selected notes will disappear. If a single component (one color) had been selected, only this component
+    will be omitted.
+  <li><b>recolor sel</b>:
+    The selected notes will be assigned to the instrument whose control panel is selected.
+  </dd>
+</dl>
+Maybe it's a good idea to practice for some time, entering notes and modifying them. Also entering, deleting and
+replacing bigger blocks of notes should be doable.
+
+<h2>Modifications while playing</h2>
+The settings from the control panels can be modified at choosen moments in the course of a tune.
+This is notified in
+the <b>modifications</b> window by small triangles. To insert these signs:<br>
+- Go to the place in the score where you want a modification.<br>
+- Play the tune during a short time, so you know that all sliders etc. have their current value.<br>
+- Check <b>ignore modifications</b>.<br>
+- Select the panel that you want to modify.<br>
+- Twiddle the knobs and listen to the sound.<br>
+- Click in the <b>modifications</b> window above the place where you want the modifications to take effect.<br>
+  <tt>&nbsp;</tt>No triangle sign will appear if you did not really introduce a modification.<br>
+- Uncheck <b>ignore modifications</b> and listen to the final result.
+<p>
+A triangle sign can be removed by clicking it while the <b>D</b> key was pressed.
+<p>
+It is the intention that sliders and checkboxes always show their current value while playing. So this is
+what happens when you hit the <b>play</b> button somewhere in the middle of a tune:<br>
+1 - All settings from the start are restored.<br>
+2 - All modifications upto the starting location are applied.<br>
+3 - The sliders etc. are drawn with their current value.
+<p>
+Clicking the <b>default = current settings</b> button will have the result that the current setting of
+all control panels will be the new default state that is valid at the start of playing.
+<p>
+All modifications will be listed when the <b>I</b> key is pressed and the mouse is clicked somewhere
+in the <b>modifications</b> window. This might look as follows:<br>
+<center><img src="messages.png"></center>
+<p>
+
+<h2>Replaying from a project file</h2>
+An existing tune plus settings can be loaded from a project file:
+<pre>    ./bouncy-tune rising.bcy</pre>
+Then enable checkbox <b>play tune</b> at the bottom, and click the play button. The label of this 
+button will turn from a triangle to a square, indicating that now it's a stop button. The tune will
+start from the left side of the score window. The current measure
+is shown after the <b>now:</b> label.
+If checkbox <b>current instr only</b> is enabled, then only the current channel of the current instrument
+will be heard.
+<p>
+<hr>
+</body>
+</html>

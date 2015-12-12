@@ -1,0 +1,23 @@
+STEPS TO BUILD ON WINDOWS WITH MINGW
+====================================
+
+You will need MSYS to run configure and make
+
+(1) There are 2 truetype files: DroidSans.ttf and DroidSansMono.ttf
+(2) Run command: ./configure
+(3) Run make
+(4) To run, every executable will need in their own folder both TTFs.
+    They also need (either installed or in their folder) all these DLLS:
+
+	SDL2.dll
+	SDL2_ttf.dll
+	libfreetype-6.dll
+	libgcc_s_dw2-1.dll
+	libstdc++-6.dll
+
+
+Be careful with step 2!!
+Using absolute folders WILL NOT WORK because of the different path notation
+
+  MSYS     -->   /c/some/path
+  WINDOWS  -->   c:\some\path

@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>make-waves</title>
+<style type="text/css">
+body {
+  background-color:#F0F0F0;
+  font-family:Verdana,"Luxi Sans";
+  font-size:11pt;
+}
+h1 { font-family:FreeSerif; font-size:30pt; }
+h2 { font-family:FreeSerif; color:#B00000; font-size:20pt;}
+h3 { font-family:FreeSerif; font-size:14pt; }
+tt {
+  font-family:"Courier New",Monospace;
+  font-size:11pt;
+}
+pre {
+  font-family:"Courier New",Monospace;
+  font-size:13pt;
+}
+table {
+  border-collapse: collapse;
+  width:95%;
+  font-weight:inherit;
+  font-size:inherit;
+  padding:10px;
+}
+td {
+  background-color:white;
+  border:solid thin grey;
+  font-weight:inherit;
+  vertical-align:top;
+  padding:10px;
+}
+table td.bold {
+  font-weight:bold;
+  vertical-align:middle;
+}
+dt {
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+<center>
+<h1>make-waves</h1>
+<h3>Creating unheard noises</h3>
+<img src="mail-adr.gif"><br>
+Last updated: jan 2012
+</center>
+<p>
+This program is meant as a demo for the SDL-widgets toolkit, also it could be useful
+for sound designers.
+<p>
+Hitting the <b>play</b> button will start or stop the generation of sound. If sound is playing and you like
+it, then it can be written it to a WAVE file (44100Hz, stereo),
+by clicking the <b>write sound</b> button (which normally is hidden).
+Sound as well as writing is stopped by re-clicking the play button.
+<p>
+There are 4 parts.
+<h2>Waves</h2>
+<center><img src="make-waves.png"></center>
+<p>
+You can add points to the waveforms and listen to the result. With the choice box <b>Mode</b>
+a waveform can be selected. Also wave B can amplitude- or frequency-modulate wave A. Then 2 sliders
+will pop up: <b>AM amount</b> or <b>FM amount</b> to control the modulation,
+<b>A/B detune</b> to control detuning of the A versus the B frequency.
+Wave B can also be used as a trigger for wave A. This
+way the perceived frequency is that of B, with formants depending on the frequency and waveform
+of A. The frequencies of A and B can be choosen with the 2-dimensional slider.
+<p>
+To draw points in the waveforms:<br>
+Left mouse button: If you click on an existing point, it can be be moved.
+Clicking somewhere else will result in the creation of a new point. In both cases a new smooth
+waveform will be drawn.<br>
+Middle mouse button: if you click on an existing point, it will be erased.
+<p>
+The state of the program can be saved to a file named x.mw by clicking the <b>save</b>
+button. Afterwards this file can be renamed to a more descriptive name. The next time the program can
+be started with this filename as option.
+<h2>Bouncy</h2>
+<center><img src="bouncy.png"></center>
+<p>
+The idea for this program came from a file with included comment "Adam's Bouncy Thing", where
+I don't know the author of. For this project sound was added: what you see is what you hear.
+The red blobs act as "masses", the lines as "springs".
+You can grab one of the masses with the mouse, release it, and see the masses
+and springs moving. Movements in the x direction can be heard from the left speaker, movements in the y
+direction from the right one. The mass with the black dot is the pickup point, it is used for sound output.
+The square green masses are fixed. With the middle button any mass can be toggled between fixed and free.
+<p>
+The spring constant and the masses can be modified with a slider, yielding different base frequencies.
+The value of the masses in the x and the y direction can be detuned
+with the <b>x/y asymmetry</b> slider, which may result in interesting interferences.
+<p>
+The <b>Input</b> radio button:
+<dl>
+<dt>mouse<dd>You move and release the masses with the mouse.</dd>
+<dt>mouse, noise burst<dd>Idem, at that a burst of pink noise is added.</dd>
+<dt>pink noise<dd>At the left fixed mass noise is injected, yielding a steady sound.</dd>
+<dt>feedback<dd>From the mass with the black dot a signal is fed back to the left fixed mass.</dd>
+</dl>
+The <b>check boxes</b>:
+<dl>
+<dt>freeze<dd>The masses are froozen, but can be moved with the mouse. After unchecking the box you can hear
+the result.</dd>
+<dt>low friction<dd>Internally, the damping factor for the graphics model has a much higher value than that of
+the audio model, in order to make their decay times equal. If this box is checked, the graphics model gets
+a low damping too, yielding a visually very long decay time.</dd>
+<dt>non-linear<dd>The spring constants will become dependent on the spring length: longer length &rarr;
+stiffer spring.</dd>
+<dt>open ended<dd>The right-side fixed point bcomes movable, and the pickup point is moved to the right.
+This yields a differend sound spectrum.</dd>
+</dl>
+The movement of the masses is softly clipped near the window edges. You can hear that in the
+sound also.
+<h2>Harmonics</h2>
+<center><img src="harmonics.png"></center>
+<p>
+Here you can create a custom frequency spectrum. The leftmost bar is the base tone, the rest of the bars
+are the harmonics. The base frequency is controlled with the <b>frequency</b> slider.
+The individual amplitudes can be modified with the left mouse button.
+<p>
+With the right mouse button one or more harmonics can be selected. Then, with slider <b>sel: freq offset</b>
+their frequency can be shifted, which might yield interesting beating sounds.
+Frequency-shifted harmonics will be drawn in a blue color.
+With slider <b>sel: ampl multiply</b> the amplitude of the selected harmonics can be modified,
+which can be used to simulate filters.
+If slider <b>add distorsion</b> is in the left-most position, the basic waveform is a pure sinusoid, whereas a modified
+sinusoid will be used at other slider positions. With slider <b>noise mode</b> noise can be added in several ways.
+In the right-most position the basic waveform will not be a pure sinusoid, but an unsteady one. 
+<p>
+With the middle mouse button one harmonic can be choosen whose data will
+be listed in the <b>info</b> window.
+<p>
+Also some soft signal-clipping can be introduced. The effect will be visible in the oscilloscope
+window. If checkbox <b>only clip base freq</b> is on, then only the base frequency-component will
+be clipped. With checkbox <b>randomized frequency</b> the frequency
+of the harmonics will contain a small random component.
+<p>
+The settings can be saved in file x.wm, as described in the Waves chapter.
+<h2>Filters</h2>
+<center><img src="filters.png"></center>
+<p>
+This is a utility to display the transfer curve of digital filters. You can add your own
+filter in file filter-test.cpp. A filter must be a subclass of class <tt>FilterBase</tt> and must
+implement 3 methods:
+<dl>
+<dt><tt>void init(float cutoff,float fq)</tt><dd>
+Initialization.
+<tt>cutoff</tt> is the cutoff frequency in Hz, <tt>fq</tt> is the filter quality factor.</dd>
+<dt><tt>float getSample(float input)</tt><dd>
+The transfer function.</dd>
+<dt><tt>const char *get_mode(int nr)</tt><dd>
+Input is the number associated with a button of the choice-box labelled <b>filter</b>
+(<tt>test_filter</tt> in the main program).
+The function should return a suitable filter name.</dd>
+</dl>
+It is difficult to explain all this in a few words, so please look at the code in filter-test.cpp.
+
+In the main file 2 statements must be added. Suppose your new filter is called
+"my-filter" and its associated class is MyFilter, then add<br>
+<tt>test_filter->add_rbut("my-filter")</tt> in the constructor of FilterTest, and<br>
+<tt>case 3: filt->the_filter=new MyFilter(); break;</tt><br>
+in function test_filt_cmd(...).
+<p>
+In the GUI, clicking the <b>play</b> button will generate a 200Hz pulse-formed signal filtered by the current
+filter. The <b>range</b> slider controls the frequency range that is displayed. In its highest
+position the range is 0 - 30000Hz, so it will contain also the Nyquist frequency (equal to half
+of the sampling frequency, which is 44100Hz). The Nyquist frequency is indicated by a red line.
+To display high-gain filters correctly, <b>log ampl scale</b> can be checked, in which case
+the logarithm of the amplitude is shown. The frequency
+scale can be shown logarithmically if <b>log freq scale</b> is checked.
+</body>
+</html>
